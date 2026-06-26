@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Security Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="overlay">
+    <div class="spinner"></div>
+    <p>Authenticating with Discord...</p>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login-container" class="login-wrapper hidden">
+    <div class="glass-card login-card">
+      <div class="icon-pulse">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h1>Discord Security Portal</h1>
+      <p>Protect your servers against abuse, compromised admins, and nukes with enterprise backups and real-time anti-nuke protection.</p>
+      <a href="/api/auth/login" class="btn btn-discord">
+        <i class="fa-brands fa-discord"></i> Login with Discord
+      </a>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div id="app-container" class="app-shell hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <i class="fa-solid fa-shield-halved brand-logo"></i>
+        <span>Antigravity Sec</span>
+      </div>
+
+      <!-- Guild Selector -->
+      <div class="guild-selector-container">
+        <label for="guild-select">Active Server</label>
+        <select id="guild-select" class="guild-dropdown">
+          <option value="" disabled selected>Select a Guild...</option>
+        </select>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item active" data-tab="overview">
+          <i class="fa-solid fa-circle-info"></i> Overview & Logs
+        </a>
+        <a href="#limits" class="nav-item" data-tab="limits">
+          <i class="fa-solid fa-sliders"></i> Security Limits
+        </a>
+        <a href="#backups" class="nav-item" data-tab="backups">
+          <i class="fa-solid fa-database"></i> Backups Manager
+        </a>
+        <a href="#templates" class="nav-item" data-tab="templates">
+          <i class="fa-solid fa-paste"></i> Templates
+        </a>
+        <a href="#trusted" class="nav-item" data-tab="trusted">
+          <i class="fa-solid fa-user-shield"></i> Trusted Users
+        </a>
+      </nav>
+
+      <!-- User Profile -->
+      <div class="sidebar-user">
+        <img id="user-avatar" class="user-avatar" src="" alt="Avatar">
+        <div class="user-meta">
+          <span id="user-name" class="user-name">Username</span>
+          <a href="/api/auth/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="content-header">
+        <h1 id="page-title">Dashboard Overview</h1>
+        <div class="server-badge" id="active-server-badge">No Server Selected</div>
+      </header>
+
+      <!-- SECTIONS -->
+
+      <!-- Overview & Logs Section -->
+      <section id="tab-overview" class="tab-content">
+        <!-- Stats Cards Grid -->
+        <div class="stats-grid">
+          <div class="glass-card stat-card">
+            <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-members">-</h3>
+              <p>Total Members</p>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon purple"><i class="fa-solid fa-sitemap"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-channels">-</h3>
+              <p>Total Channels</p>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon yellow"><i class="fa-solid fa-user-tag"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-roles">-</h3>
+              <p>Guild Roles</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Realtime Logs -->
+        <div class="glass-card log-card-container">
+          <div class="card-header">
+            <h2>🛡️ Guild Security Incident Logs</h2>
+            <button id="refresh-logs-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="log-table-wrapper">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Executor</th>
+                  <th>Target</th>
+                  <th>Severity</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <tr>
+                  <td colspan="6" class="table-empty">Select a server to view security event logs.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Security Limits Section -->
+      <section id="tab-limits" class="tab-content hidden">
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>⚙️ Anti-Nuke Thresholds & Event Toggles</h2>
+            <button id="save-limits-btn" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+          </div>
+          <form id="limits-form" class="settings-form">
+            
+            <div class="form-grid">
+              <!-- Channel Delete -->
+              <div class="settings-card">
+                <h3>Mass Channel Deletions</h3>
+                <div class="form-row">
+                  <label>Max Deletes</label>
+                  <input type="number" name="limits.channelDelete.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.channelDelete.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-ch-del-enable" name="limits.channelDelete.enabled">
+                  <label for="limit-ch-del-enable">Enable Protection</label>
+                </div>
+              </div>
+
+              <!-- Channel Create -->
+              <div class="settings-card">
+                <h3>Mass Channel Creations</h3>
+                <div class="form-row">
+                  <label>Max Creates</label>
+                  <input type="number" name="limits.channelCreate.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.channelCreate.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-ch-cre-enable" name="limits.channelCreate.enabled">
+                  <label for="limit-ch-cre-enable">Enable Protection</label>
+                </div>
+              </div>
+
+              <!-- Role Delete -->
+              <div class="settings-card">
+                <h3>Mass Role Deletions</h3>
+                <div class="form-row">
+                  <label>Max Deletes</label>
+                  <input type="number" name="limits.roleDelete.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.roleDelete.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-r-del-enable" name="limits.roleDelete.enabled">
+                  <label for="limit-r-del-enable">Enable Protection</label>
+                </div>
+              </div>
+
+              <!-- Role Create -->
+              <div class="settings-card">
+                <h3>Mass Role Creations</h3>
+                <div class="form-row">
+                  <label>Max Creates</label>
+                  <input type="number" name="limits.roleCreate.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.roleCreate.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-r-cre-enable" name="limits.roleCreate.enabled">
+                  <label for="limit-r-cre-enable">Enable Protection</label>
+                </div>
+              </div>
+
+              <!-- Member Ban -->
+              <div class="settings-card">
+                <h3>Mass Member Bans</h3>
+                <div class="form-row">
+                  <label>Max Bans</label>
+                  <input type="number" name="limits.memberBan.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.memberBan.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-ban-enable" name="limits.memberBan.enabled">
+                  <label for="limit-ban-enable">Enable Protection</label>
+                </div>
+              </div>
+
+              <!-- Member Kick -->
+              <div class="settings-card">
+                <h3>Mass Member Kicks</h3>
+                <div class="form-row">
+                  <label>Max Kicks/Timeouts</label>
+                  <input type="number" name="limits.memberKick.limit" min="1" max="100">
+                </div>
+                <div class="form-row">
+                  <label>Window (sec)</label>
+                  <input type="number" name="limits.memberKick.window" min="1" max="3600">
+                </div>
+                <div class="form-row checkbox-row">
+                  <input type="checkbox" id="limit-kick-enable" name="limits.memberKick.enabled">
+                  <label for="limit-kick-enable">Enable Protection</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advanced Gating Toggles -->
+            <div class="settings-card advanced-settings-card">
+              <h3>⚡ Advanced Protection Modules</h3>
+              <div class="toggles-grid">
+                <div class="toggle-row">
+                  <div class="toggle-text">
+                    <strong>Dangerous Permission Grants Blocking</strong>
+                    <p>Blocks and reverts Admin/Manage Role assignments made by untrusted admins.</p>
+                  </div>
+                  <input type="checkbox" class="ios-switch" id="opt-dangerous-perms" name="limits.dangerousPermissionGrant.enabled">
+                </div>
+
+                <div class="toggle-row">
+                  <div class="toggle-text">
+                    <strong>Unauthorized Bot Addition Shield</strong>
+                    <p>Immediately kicks new bots invited by untrusted users and quarantines the inviter.</p>
+                  </div>
+                  <input type="checkbox" class="ios-switch" id="opt-bot-shield" name="limits.unauthorizedBotAdd.enabled">
+                </div>
+
+                <div class="toggle-row">
+                  <div class="toggle-text">
+                    <strong>Dangerous Webhook Creator Shield</strong>
+                    <p>Deletes any webhooks created by untrusted accounts and strips the creator's roles.</p>
+                  </div>
+                  <input type="checkbox" class="ios-switch" id="opt-webhook-shield" name="limits.dangerousWebhookCreate.enabled">
+                </div>
+              </div>
+            </div>
+
+            <!-- Global Configurations -->
+            <div class="settings-card advanced-settings-card">
+              <h3>📢 Logging and Automatic Backups</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label for="settings-logging-channel">Security Alerts Log Channel</label>
+                  <select id="settings-logging-channel" name="loggingChannelId" class="guild-dropdown">
+                    <option value="">No log channel selected</option>
+                  </select>
+                </div>
+                
+                <div class="form-row">
+                  <label for="settings-backup-interval">Auto-Backup Frequency</label>
+                  <select id="settings-backup-interval" name="autoBackupInterval" class="guild-dropdown">
+                    <option value="disabled">Disabled</option>
+                    <option value="hourly">Hourly</option>
+                    <option value="daily">Daily</option>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <label for="settings-backup-retention">Backup Retention (Days)</label>
+                  <input type="number" id="settings-backup-retention" name="backupRetentionDays" min="1" max="180">
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </section>
+
+      <!-- Backups Manager Section -->
+      <section id="tab-backups" class="tab-content hidden">
+        <div class="action-bar glass-card">
+          <button id="btn-create-backup" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Backup</button>
+          <div class="file-upload-wrapper">
+            <button id="btn-upload-trigger" class="btn btn-secondary"><i class="fa-solid fa-upload"></i> Upload Backup JSON</button>
+            <input type="file" id="backup-file-input" accept=".json" class="hidden">
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>📦 Saved Backups</h2>
+          </div>
+          <div class="backups-list" id="backups-container">
+            <div class="table-empty">Loading backups...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Templates Manager Section -->
+      <section id="tab-templates" class="tab-content hidden">
+        <div class="action-bar glass-card">
+          <div class="input-btn-group">
+            <input type="text" id="template-name-input" placeholder="Template ID (e.g. survival-lobby)">
+            <button id="btn-create-template" class="btn btn-primary"><i class="fa-solid fa-paste"></i> Save Current as Template</button>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>📋 Layout Templates</h2>
+          </div>
+          <div class="templates-list" id="templates-container">
+            <div class="table-empty">Loading templates...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trusted Users Section -->
+      <section id="tab-trusted" class="tab-content hidden">
+        <div class="action-bar glass-card">
+          <div class="input-btn-group">
+            <input type="text" id="trusted-userid-input" placeholder="Discord User ID (e.g. 123456789012345678)">
+            <button id="btn-add-trusted" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Add Trusted User</button>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>🛡️ Current Trusted Users</h2>
+          </div>
+          <div class="trusted-list-wrapper">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Discord ID</th>
+                  <th>Added By</th>
+                  <th>Added On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trusted-tbody">
+                <tr>
+                  <td colspan="5" class="table-empty">Loading trusted users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Custom Scripts -->
+  <script src="/script.js"></script>
+</body>
+</html>
