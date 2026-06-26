@@ -22,6 +22,10 @@ declare global {
 export function startDashboardServer(client: Client): void {
   const app = express();
 
+  // Trust proxy for secure cookies behind reverse proxy (e.g. Railway)
+  app.set('trust proxy', 1);
+
+
   // 1. Enable CORS for development
   app.use(cors({
     origin: config.dashboardUrl,
